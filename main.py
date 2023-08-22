@@ -14,7 +14,7 @@ header_height=block*2
 screen_width=block*10
 screen_height=block*10+header_height
 num_mines = 10
-reset_button = Rectangle(screen_width//2-block, block//2, block*2, block,)
+reset_button = Rectangle(screen_width//2-(block*2), block//2, block*2, block,)
 
 def get_random_coords():
     return Vector2(random.randrange(0, screen_width, 30), random.randrange(header_height, screen_height, 30))
@@ -33,15 +33,29 @@ class Square:
     def __repr__(self):
         return f"({self.x}, {self.y}), mine = {self.mine}, flag = {self.flag}, visible = {self.visible}"
     
-    def get_adjacent(self, state):
-        return [state.board[(x, y)] for y in range(-block, 0, block) for x in range(-block, 0, block)]
+    # get number of adjacent mines but not mines themselves. Make sure it's in range i.e. .get()
+    def get_adjacent_to_mines(self, state):
+        for dy in [-block, 0, block]:
+            for dx in [-block, 0, block]:
+                adj = state.board.get((self.x+dx, self.y+dy), None)
+                if adj != None and adj != self and adj.mine == False:
+                    adj.adj += 1
+    
+    # get adjacent not-visible squares that aren't mines or flags
+    def get_adjacent_reveal(self, state):
+        for dy in [-block, 0, block]:
+            for dx in [-block, 0, block]:
+                adj = state.board.get((self.x+dx, self.y+dy), None)
+                if adj != None and adj != self and adj.visible == False:
+                    adj.visible = True
+                    if adj.adj == 0: # if adj is empty, run again
+                        adj.get_adjacent_reveal(state)
 
 class State:
     def __init__(self):
         self.board = {}
         self.board_rectangle = Rectangle(0, header_height, screen_width, screen_height)
         self.mines = set()
-        self.visible_squares = set()
         self.flags = set()
         self.selection = None
         self.lose = False
@@ -70,12 +84,10 @@ def create_board(state, num_mines, fixed_mines=False):
             state.mines.add(state.board[(mine.x, mine.y)])
             state.board[(mine.x, mine.y)].mine = True
 
-    # # calc adj to mines
-    # for mine in state.mines:
-    #     # print((mine.x, mine.y)) # for debugging
-    #     all_adjacent = mine.get_adjacent(state, exclude="mine")
-    #     for adj in all_adjacent:
-    #         adj.adj += 1
+    # calc adj to mines
+    for mine in state.mines:
+        mine.get_adjacent_to_mines(state)
+
 
 # could change all squares to Rectangles if you can get them to be structs
 # easier to calculate collision if no modulo
@@ -122,16 +134,18 @@ def update(state):
             state.reset = True
             return
         elif state.selection != None:
-            if state.selection.flag == False: # if not a flag
-                if state.selection.mine == True:
-                    state.lose = True
-                    state.selection.blow_up = True
-                elif state.selection.adj > 0:
-                    pass
-                else: # if revealing a number
-                    state.selection.visible = True
-                    state.visible_squares.add(state.selection)
-                    state.selection = None
+            if state.selection.flag == True: # if flag
+                pass
+            elif state.selection.mine == True: # if mine
+                state.lose = True
+                state.selection.blow_up = True
+            elif state.selection.adj > 0: # if revealing a number
+                state.selection.visible = True
+                state.selection = None
+            else: # empty space, recursive reveal
+                state.selection.visible = True
+                state.selection.get_adjacent_reveal(state)
+                state.selection = None
 
     elif is_mouse_button_released(mouse_button_right): # release right click
         if state.selection == "reset":
@@ -148,9 +162,22 @@ def update(state):
                 state.flags.remove(state.selection)
                 state.selection = None
     
+    # check for win 2 ways: if set(mines) matches set(flags)
+    if state.flags == state.mines:
+        state.win = True
+    # if all non-mines are visible
+    if all(square.visible == True for square in state.board.values() if square.mine == False):
+        state.win = True
+        # flag all mines not yet flagged
+        for mine in state.mines:
+            if mine.flag == False:
+                mine.flag = True
+    
+
     # for debugging - press m to reveal
     if is_key_pressed(key_m):
-        print(state.reset)
+        print(state.selection.get_adjacent_to_mines(state))
+
 
 def render(state):
     begin_drawing()
@@ -159,34 +186,49 @@ def render(state):
     for square in state.board.values():
         if square.flag == True: # flags don't change until deselected
             draw_rectangle(square.x, square.y, 30, 30, BLUE)
-        elif square == state.selection:
+        elif square == state.selection: # mouse pressed down but not released
             draw_rectangle(state.selection.x, state.selection.y, 30, 30, LIGHTGRAY)
         elif square.visible == True:
-            draw_rectangle(square.x, square.y, 30, 30, GREEN)
-        # debugging - display where mines are
-        # elif square.mine == True:
-        #     draw_rectangle(square.x, square.y, 30, 30, RED)
-        else:
+            draw_rectangle(square.x, square.y, 30, 30, GREEN) # empty squares
+            if square.adj == 1: # squares with 1; diff offset due to font size
+                draw_text(str(square.adj), square.x+12, square.y+5, 20, BLACK)
+            if square.adj > 1: # number squares above 1; diff offset due to font size
+                draw_text(str(square.adj), square.x+10, square.y+5, 20, BLACK)
+        else: # unselected/ unrevealed
             draw_rectangle(square.x, square.y, 30, 30, DARKGRAY)
     
-    if state.lose == True:
-        for mine in state.mines:
-            draw_rectangle(mine.x, mine.y, 30, 30, RED)
-            if mine.blow_up == True:
-                draw_rectangle(mine.x, mine.y, 30, 30, ORANGE)
-    elif state.win == True:
-        pass
     
+
+    # draw reset button, depending on state.win
+    draw_rectangle(int(reset_button.x), int(reset_button.y), block*4, block, GRAY)
+    if state.win != True:
+        draw_text("Reset", screen_width//2-block-4, 20, 25, BLACK)
+    elif state.win == True:
+        draw_text("Congrats!!!!", screen_width//2-block-25, 20, 20, BLACK)
+
+    # if state.lose, x out flags and reveal mines
+    if state.lose == True:
+        render_lose(state)
+
     draw_grid()
 
-    # draw reset button
-    draw_rectangle(int(reset_button.x), int(reset_button.y), block*2, block, GRAY)
-    draw_text("Reset", screen_width//2-block+5, 20, 19, BLACK)
     end_drawing()
 
 
-def render_win(state):
-    pass
+def render_lose(state):
+    for mine in state.mines:
+        if mine.blow_up == True: # orange if the killing blow
+            draw_rectangle(mine.x, mine.y, 30, 30, ORANGE)
+        elif mine.flag == True: # pass over flagged mines
+            pass
+        else: # reveal all non-flagged mines
+            draw_rectangle(mine.x, mine.y, 30, 30, RED)
+    
+    for flag in state.flags:
+        if flag.mine == False: # if wrongly flagged, X-out
+            draw_line_ex((flag.x, flag.y), (flag.x+block, flag.y+block), 2, RED)
+            draw_line_ex((flag.x, flag.y+block), (flag.x+block, flag.y), 2, RED)
+
 
 def draw_grid():
     for x in range(0, screen_width, block):
