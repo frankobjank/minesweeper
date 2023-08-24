@@ -4,17 +4,30 @@ from pyray import *
 
 # for incorporating medium and hard, start with menu to choose difficulty
 # then use set_window_size based on selection
-# globals
+
+# controls
 mouse_button_left= 0
 mouse_button_right= 1
 key_m= 77
 
+# game board constants
 block = 30
 header_height=block*2
 screen_width=block*10
 screen_height=block*10+header_height
 num_mines = 10
-reset_button = Rectangle(screen_width//2-(block*2), block//2, block*2, block,)
+
+# header buttons + boxes
+reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block)
+reset_texture = load_texture("resources/button.png")
+header_box = Rectangle(screen_width//18, 8, block*2, block+block//2)
+
+# window opens, timer starts
+# start game at 10
+# game time = 10-10, 11-10, 12-10 (time_elapsed - start_time)
+# game ends at time_elapsed 60, game time 60-10 = 50
+# game time 50 stop and gets saved, time elapsing continues
+
 
 def get_random_coords():
     return Vector2(random.randrange(0, screen_width, 30), random.randrange(header_height, screen_height, 30))
@@ -57,12 +70,25 @@ class State:
         self.board_rectangle = Rectangle(0, header_height, screen_width, screen_height)
         self.mines = set()
         self.flags = set()
+        self.mines_remaining = num_mines - len(self.flags)
+        self.start_time = get_time()
+        self.game_time = 0
+        self.score = 0
         self.selection = None
-        self.lose = False
         self.win = False
+        self.lose = False
         self.reset = False
-
     
+    def get_game_time(self):
+        return get_time() - self.start_time
+
+
+
+def update_menu(state):
+    pass
+
+def render_menu(state):
+    pass
 
 def reset():
     new_state = State()
@@ -87,14 +113,6 @@ def create_board(state, num_mines, fixed_mines=False):
     # calc adj to mines
     for mine in state.mines:
         mine.get_adjacent_to_mines(state)
-
-
-# could change all squares to Rectangles if you can get them to be structs
-# easier to calculate collision if no modulo
-
-
-# check_collision_point_rec(point: Vector2, rec: Rectangle)
-
 
 def update(state):
 
@@ -139,6 +157,7 @@ def update(state):
             elif state.selection.mine == True: # if mine
                 state.lose = True
                 state.selection.blow_up = True
+                state.score = state.get_game_time() # game over, freeze time
             elif state.selection.adj > 0: # if revealing a number
                 state.selection.visible = True
                 state.selection = None
@@ -161,22 +180,36 @@ def update(state):
                 state.selection.flag = False
                 state.flags.remove(state.selection)
                 state.selection = None
+            
+    state.mines_remaining = num_mines - len(state.flags)
+
+
+
     
     # check for win 2 ways: if set(mines) matches set(flags)
-    if state.flags == state.mines:
-        state.win = True
-    # if all non-mines are visible
-    if all(square.visible == True for square in state.board.values() if square.mine == False):
-        state.win = True
-        # flag all mines not yet flagged
-        for mine in state.mines:
-            if mine.flag == False:
-                mine.flag = True
-    
+    if state.win == False and state.lose == False:
+        if state.flags == state.mines:
+            state.win = True
+            state.score = state.get_game_time() # game over, freeze time
+        # if all non-mines are visible
+        if all(square.visible == True for square in state.board.values() if square.mine == False):
+            state.win = True
+            state.score = state.get_game_time() # game over, freeze time
+            # flag all mines not yet flagged
+            for mine in state.mines:
+                if mine.flag == False:
+                    mine.flag = True
+                    state.flags.add(mine)
+
+    # calc game time
+    if state.win == False and state.lose == False:
+        state.game_time = str(int(state.get_game_time()))
+    else:
+        state.game_time = str(int(state.score))
 
     # for debugging - press m to reveal
-    if is_key_pressed(key_m):
-        print(state.selection.get_adjacent_to_mines(state))
+    # if is_key_pressed(key_m):
+        # print(f"start = {state.start_time}, end = {state.start_time+state.score} score = {state.score}")
 
 
 def render(state):
@@ -197,10 +230,24 @@ def render(state):
         else: # unselected/ unrevealed
             draw_rectangle(square.x, square.y, 30, 30, DARKGRAY)
     
-    
+    # draw timer on left
+    draw_rectangle(int(header_box.x), int(header_box.y), int(header_box.width), int(header_box.height), BLACK)
+    len_time = len(state.game_time)
+    draw_text(state.game_time, int(header_box.x+header_box.width//(2+len_time)), 20, 25, WHITE)
+
+    # draw mines remaining on the right
+    draw_rectangle(screen_width-int(header_box.x)-int(header_box.width), int(header_box.y), int(header_box.width), int(header_box.height), BLACK)
+    len_min_rem = len(str(state.mines_remaining))
+    draw_text(str(state.mines_remaining), screen_width-int(header_box.width//2)-int(header_box.x+header_box.width//(2+len_min_rem)), 20, 25, WHITE)
+
+
+
+    # header_box =    Rectangle(screen_width//18,          8,        block*2, block+block//2)
+
+    # reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block         )
 
     # draw reset button, depending on state.win
-    draw_rectangle(int(reset_button.x), int(reset_button.y), block*4, block, GRAY)
+    draw_rectangle(int(reset_button.x), int(reset_button.y), int(reset_button.width), int(reset_button.height), GRAY)
     if state.win != True:
         draw_text("Reset", screen_width//2-block-4, 20, 25, BLACK)
     elif state.win == True:
@@ -246,13 +293,13 @@ def main():
         update(state)
         render(state)
 
-        # reset game after win or lose
+        # reset game if button pressed
         if state.reset == True:
             state = reset()
+    unload_texture(reset_button)
     close_window()
 
 main()
 
-# track time
 # save high-scores
-# display mines left
+# more difficulties and window sizing
