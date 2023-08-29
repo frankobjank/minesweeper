@@ -18,10 +18,8 @@ screen_height=block*10+header_height
 num_mines = 10
 
 # header buttons + boxes
+header_box = Rectangle(screen_width//18, 8, block*2, block+block//2) # timer and mines_remaining
 reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block)
-reset_texture = load_texture("resources/button.png")
-header_box = Rectangle(screen_width//18, 8, block*2, block+block//2)
-
 # window opens, timer starts
 # start game at 10
 # game time = 10-10, 11-10, 12-10 (time_elapsed - start_time)
@@ -53,7 +51,7 @@ class Square:
                 adj = state.board.get((self.x+dx, self.y+dy), None)
                 if adj != None and adj != self and adj.mine == False:
                     adj.adj += 1
-    
+
     # get adjacent not-visible squares that aren't mines or flags
     def get_adjacent_reveal(self, state):
         for dy in [-block, 0, block]:
@@ -115,7 +113,6 @@ def create_board(state, num_mines, fixed_mines=False):
         mine.get_adjacent_to_mines(state)
 
 def update(state):
-
     if is_mouse_button_down(mouse_button_left): # hold down left click
         state.selection = get_mouse_position()
         # check if selection is on board and game isn't over
@@ -247,7 +244,8 @@ def render(state):
     # reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block         )
 
     # draw reset button, depending on state.win
-    draw_rectangle(int(reset_button.x), int(reset_button.y), int(reset_button.width), int(reset_button.height), GRAY)
+    
+    # draw_rectangle(int(reset_button.x), int(reset_button.y), int(reset_button.width), int(reset_button.height), GRAY)
     if state.win != True:
         draw_text("Reset", screen_width//2-block-4, 20, 25, BLACK)
     elif state.win == True:
@@ -296,7 +294,6 @@ def main():
         # reset game if button pressed
         if state.reset == True:
             state = reset()
-    unload_texture(reset_button)
     close_window()
 
 main()
