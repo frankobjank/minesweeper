@@ -20,12 +20,6 @@ num_mines = 10
 # header buttons + boxes
 header_box = Rectangle(screen_width//18, 8, block*2, block+block//2) # timer and mines_remaining
 reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block)
-# window opens, timer starts
-# start game at 10
-# game time = 10-10, 11-10, 12-10 (time_elapsed - start_time)
-# game ends at time_elapsed 60, game time 60-10 = 50
-# game time 50 stop and gets saved, time elapsing continues
-
 
 def get_random_coords():
     return Vector2(random.randrange(0, screen_width, 30), random.randrange(header_height, screen_height, 30))
