@@ -2,9 +2,6 @@ import random
 import time
 from pyray import *
 
-# for incorporating medium and hard, start with menu to choose difficulty
-# then use set_window_size based on selection
-
 # controls
 mouse_button_left= 0
 mouse_button_right= 1
@@ -74,8 +71,6 @@ class State:
     def get_game_time(self):
         return get_time() - self.start_time
 
-
-
 def update_menu(state):
     pass
 
@@ -86,7 +81,6 @@ def reset():
     new_state = State()
     create_board(new_state, num_mines, fixed_mines=False)
     return new_state
-
 
 def create_board(state, num_mines, fixed_mines=False):
     state.board = {(x, y): Square(x, y) for y in range(header_height, screen_height, block) for x in range(0, screen_width, block)}
@@ -174,7 +168,6 @@ def update(state):
                 state.selection = None
             
     state.mines_remaining = num_mines - len(state.flags)
-
 
 
     
@@ -293,5 +286,8 @@ def main():
 
 main()
 
+# to-do:
 # save high-scores
 # more difficulties and window sizing
+    # for incorporating medium and hard, start with menu to choose difficulty
+    # then use set_window_size based on selection
