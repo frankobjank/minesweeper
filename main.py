@@ -3,9 +3,6 @@ import time
 from pyray import *
 from collections import deque
 
-# for incorporating medium and hard, start with menu to choose difficulty
-# then use set_window_size based on selection
-
 # controls
 mouse_button_left= 0
 mouse_button_right= 1
@@ -82,7 +79,6 @@ class State:
         return get_time() - self.start_time
 
 
-
 def update_menu(state):
     pass
 
@@ -130,7 +126,6 @@ def update(state):
             state.selection = "reset"
         else:
             state.selection = None
-
 
     elif is_mouse_button_down(mouse_button_right): # hold down right click 
         state.selection = get_mouse_position()
@@ -190,7 +185,6 @@ def update(state):
             state.revealing_square = state.to_reveal.pop()
     else:
         state.revealing_square = None
-
     
     # check for win 2 ways: if set(mines) matches set(flags)
     if state.win == False and state.lose == False:
@@ -248,7 +242,6 @@ def render(state):
     draw_rectangle(screen_width-int(header_box.x)-int(header_box.width), int(header_box.y), int(header_box.width), int(header_box.height), BLACK)
     len_min_rem = len(str(state.mines_remaining))
     draw_text(str(state.mines_remaining), screen_width-int(header_box.width//2)-int(header_box.x+header_box.width//(2+len_min_rem)), 20, 25, WHITE)
-
 
 
     # header_box =   Rectangle(screen_width//18,          8,        block*2, block+block//2)
@@ -310,5 +303,8 @@ def main():
 
 main()
 
+# to-do:
 # save high-scores
 # more difficulties and window sizing
+    # for incorporating medium and hard, start with menu to choose difficulty
+    # then use set_window_size based on selection
