@@ -52,12 +52,14 @@ class Square:
 
     # get adjacent not-visible squares that aren't mines or flags
     def get_adjacent_reveal(self, state):
-        # state.to_reveal.
+        self.visible = True
+        state.to_reveal.appendleft(self)
         for dy in [-block, 0, block]:
             for dx in [-block, 0, block]:
                 adj = state.board.get((self.x+dx, self.y+dy), None)
                 if adj != None and adj != self and adj.visible == False:
                     adj.visible = True
+                    state.to_reveal.appendleft(adj)
                     if adj.adj == 0: # if adj is empty, run again
                         adj.get_adjacent_reveal(state)
 
@@ -90,18 +92,19 @@ def render_menu(state):
 
 def reset():
     new_state = State()
-    create_board(new_state, num_mines, fixed_mines=False)
+    create_board(new_state, num_mines, fixed_mines=True)
     return new_state
 
 
 def create_board(state, num_mines, fixed_mines=False):
     state.board = {(x, y): Square(x, y) for y in range(header_height, screen_height, block) for x in range(0, screen_width, block)}
+    print(f"{state.board}")
     # fixed_mines mines for debugging
     if fixed_mines == True:
-        state.mines = [state.board[(mine_coord)] for mine_coord in [(30, 60), (180, 60), (60, 90), (0, 150), (210, 150), (90, 180), (270, 180), (0, 210), (60, 210), (60, 270)]]
+        state.mines = set(state.board[(mine_coord)] for mine_coord in [(30, 60), (180, 60), (60, 90), (0, 150), (210, 150), (90, 180), (270, 180), (0, 210), (60, 210), (60, 270)])
 
         for mine in state.mines:
-            state.board[(mine)].mine = True
+            state.board[(mine.x, mine.y)].mine = True
     # random mines
     else:
         while len(state.mines)<num_mines:
@@ -160,7 +163,7 @@ def update(state):
                 state.selection.visible = True
                 state.selection = None
             else: # empty space, recursive reveal
-                state.selection.visible = True
+                # state.selection.visible = True
                 state.selection.get_adjacent_reveal(state)
                 state.selection = None
 
@@ -228,6 +231,11 @@ def render(state):
         else: # unselected/ unrevealed
             draw_rectangle(square.x, square.y, 30, 30, DARKGRAY)
     
+    while state.to_reveal:
+        square = state.to_reveal.pop()
+        if frame_count % 30:
+            draw_rectangle(square.x, square.y, 30, 30, WHITE)
+    
     # draw timer on left
     draw_rectangle(int(header_box.x), int(header_box.y), int(header_box.width), int(header_box.height), BLACK)
     len_time = len(state.game_time)
@@ -240,7 +248,7 @@ def render(state):
 
 
 
-    # header_box =    Rectangle(screen_width//18,          8,        block*2, block+block//2)
+    # header_box =   Rectangle(screen_width//18,          8,        block*2, block+block//2)
 
     # reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block         )
 
@@ -286,7 +294,7 @@ def draw_grid():
 def main():
     state = State()
     set_target_fps(60)
-    create_board(state, num_mines, fixed_mines=False)
+    create_board(state, num_mines, fixed_mines=True)
     init_window(screen_width, screen_height, "Minesweeper")
     while not window_should_close():
         update(state)
