@@ -186,8 +186,8 @@ def update(state):
     if state.revealing_square:
         state.revealing_square.visible = True
     if state.to_reveal:
-        # if state.frame_count % 3 == 0:
-        state.revealing_square = state.to_reveal.pop()
+        if state.frame_count % 2 == 0:
+            state.revealing_square = state.to_reveal.pop()
     else:
         state.revealing_square = None
 
