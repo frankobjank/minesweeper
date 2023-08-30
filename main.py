@@ -98,9 +98,10 @@ def create_board(state, num_mines, fixed_mines=False):
     state.board = {(x, y): Square(x, y) for y in range(header_height, screen_height, block) for x in range(0, screen_width, block)}
     # fixed_mines mines for debugging
     if fixed_mines == True:
-        state.mines = [(30, 60), (180, 60), (60, 90), (0, 150), (210, 150), (90, 180), (270, 180), (0, 210), (60, 210), (60, 270)]
+        state.mines = set(state.board[(mine_coord)] for mine_coord in [(30, 60), (180, 60), (60, 90), (0, 150), (210, 150), (90, 180), (270, 180), (0, 210), (60, 210), (60, 270)])
+
         for mine in state.mines:
-            state.board[(mine)].mine = True
+            state.board[(mine.x, mine.y)].mine = True
     # random mines
     else:
         while len(state.mines)<num_mines:
