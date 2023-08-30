@@ -18,8 +18,6 @@ screen_width=block*10
 screen_height=block*10+header_height
 num_mines = 10
 
-frame_count = 0
-
 # header buttons + boxes
 header_box = Rectangle(screen_width//18, 8, block*2, block+block//2) # timer and mines_remaining
 reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block)
@@ -52,13 +50,11 @@ class Square:
 
     # get adjacent not-visible squares that aren't mines or flags
     def get_adjacent_reveal(self, state):
-        self.visible = True
         state.to_reveal.appendleft(self)
         for dy in [-block, 0, block]:
             for dx in [-block, 0, block]:
                 adj = state.board.get((self.x+dx, self.y+dy), None)
-                if adj != None and adj != self and adj.visible == False:
-                    adj.visible = True
+                if adj != None and adj != self and adj.visible == False and adj not in state.to_reveal:
                     state.to_reveal.appendleft(adj)
                     if adj.adj == 0: # if adj is empty, run again
                         adj.get_adjacent_reveal(state)
@@ -71,7 +67,10 @@ class State:
         self.flags = set()
         self.mines_remaining = num_mines - len(self.flags)
         self.selection = None
-        self.to_reveal = deque()
+        self.to_reveal = deque() # for animating reveal
+        self.revealing_square = None # for animating reveal
+        self.origin = None # for animating reveal
+        self.frame_count = 0 # for animating reveal
         self.win = False
         self.lose = False
         self.reset = False
@@ -98,7 +97,6 @@ def reset():
 
 def create_board(state, num_mines, fixed_mines=False):
     state.board = {(x, y): Square(x, y) for y in range(header_height, screen_height, block) for x in range(0, screen_width, block)}
-    print(f"{state.board}")
     # fixed_mines mines for debugging
     if fixed_mines == True:
         state.mines = set(state.board[(mine_coord)] for mine_coord in [(30, 60), (180, 60), (60, 90), (0, 150), (210, 150), (90, 180), (270, 180), (0, 210), (60, 210), (60, 270)])
@@ -117,6 +115,7 @@ def create_board(state, num_mines, fixed_mines=False):
         mine.get_adjacent_to_mines(state)
 
 def update(state):
+    state.frame_count += 1
     if is_mouse_button_down(mouse_button_left): # hold down left click
         state.selection = get_mouse_position()
         # check if selection is on board and game isn't over
@@ -163,7 +162,6 @@ def update(state):
                 state.selection.visible = True
                 state.selection = None
             else: # empty space, recursive reveal
-                # state.selection.visible = True
                 state.selection.get_adjacent_reveal(state)
                 state.selection = None
 
@@ -184,7 +182,14 @@ def update(state):
             
     state.mines_remaining = num_mines - len(state.flags)
 
-
+    # remove to_reveal one-by-one displaced by % frames and convert to visible squares
+    if state.revealing_square:
+        state.revealing_square.visible = True
+    if state.to_reveal:
+        # if state.frame_count % 3 == 0:
+        state.revealing_square = state.to_reveal.pop()
+    else:
+        state.revealing_square = None
 
     
     # check for win 2 ways: if set(mines) matches set(flags)
@@ -222,8 +227,10 @@ def render(state):
             draw_rectangle(square.x, square.y, 30, 30, BLUE)
         elif square == state.selection: # mouse pressed down but not released
             draw_rectangle(state.selection.x, state.selection.y, 30, 30, LIGHTGRAY)
+        elif square == state.revealing_square:
+            draw_rectangle(square.x, square.y, 30, 30, WHITE)
         elif square.visible == True:
-            draw_rectangle(square.x, square.y, 30, 30, GREEN) # empty squares
+            draw_rectangle(square.x, square.y, 30, 30, GREEN) # fill safe squares with green
             if square.adj == 1: # squares with 1; diff offset due to font size
                 draw_text(str(square.adj), square.x+12, square.y+5, 20, BLACK)
             if square.adj > 1: # number squares above 1; diff offset due to font size
@@ -231,10 +238,6 @@ def render(state):
         else: # unselected/ unrevealed
             draw_rectangle(square.x, square.y, 30, 30, DARKGRAY)
     
-    while state.to_reveal:
-        square = state.to_reveal.pop()
-        if frame_count % 30:
-            draw_rectangle(square.x, square.y, 30, 30, WHITE)
     
     # draw timer on left
     draw_rectangle(int(header_box.x), int(header_box.y), int(header_box.width), int(header_box.height), BLACK)
