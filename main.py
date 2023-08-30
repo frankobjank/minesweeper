@@ -1,6 +1,7 @@
 import random
 import time
 from pyray import *
+from collections import deque
 
 # for incorporating medium and hard, start with menu to choose difficulty
 # then use set_window_size based on selection
@@ -17,14 +18,11 @@ screen_width=block*10
 screen_height=block*10+header_height
 num_mines = 10
 
+frame_count = 0
+
 # header buttons + boxes
 header_box = Rectangle(screen_width//18, 8, block*2, block+block//2) # timer and mines_remaining
 reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block)
-# window opens, timer starts
-# start game at 10
-# game time = 10-10, 11-10, 12-10 (time_elapsed - start_time)
-# game ends at time_elapsed 60, game time 60-10 = 50
-# game time 50 stop and gets saved, time elapsing continues
 
 
 def get_random_coords():
@@ -54,6 +52,7 @@ class Square:
 
     # get adjacent not-visible squares that aren't mines or flags
     def get_adjacent_reveal(self, state):
+        # state.to_reveal.
         for dy in [-block, 0, block]:
             for dx in [-block, 0, block]:
                 adj = state.board.get((self.x+dx, self.y+dy), None)
@@ -69,13 +68,14 @@ class State:
         self.mines = set()
         self.flags = set()
         self.mines_remaining = num_mines - len(self.flags)
-        self.start_time = get_time()
-        self.game_time = 0
-        self.score = 0
         self.selection = None
+        self.to_reveal = deque()
         self.win = False
         self.lose = False
         self.reset = False
+        self.start_time = get_time()
+        self.game_time = 0
+        self.score = 0
     
     def get_game_time(self):
         return get_time() - self.start_time
@@ -98,7 +98,8 @@ def create_board(state, num_mines, fixed_mines=False):
     state.board = {(x, y): Square(x, y) for y in range(header_height, screen_height, block) for x in range(0, screen_width, block)}
     # fixed_mines mines for debugging
     if fixed_mines == True:
-        state.mines = [(30, 60), (180, 60), (60, 90), (0, 150), (210, 150), (90, 180), (270, 180), (0, 210), (60, 210), (60, 270)]
+        state.mines = [state.board[(mine_coord)] for mine_coord in [(30, 60), (180, 60), (60, 90), (0, 150), (210, 150), (90, 180), (270, 180), (0, 210), (60, 210), (60, 270)]]
+
         for mine in state.mines:
             state.board[(mine)].mine = True
     # random mines
