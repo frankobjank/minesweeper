@@ -57,6 +57,8 @@ class Square:
                     adj.visible = True
                     if adj.adj == 0: # if adj is empty, run again
                         adj.get_adjacent_reveal(state)
+    
+    def get_adjacent_
 
 class State:
     def __init__(self):
@@ -157,7 +159,7 @@ def update(state):
                 state.selection = None
             else: # empty space, recursive reveal
                 state.selection.visible = True
-                state.selection.get_adjacent_reveal(state)
+                state.selection.get_adjacent_recursive(state)
                 state.selection = None
 
     elif is_mouse_button_released(mouse_button_right): # release right click
