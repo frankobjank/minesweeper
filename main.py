@@ -1,6 +1,7 @@
 import random
 import time
 from pyray import *
+from collections import deque
 
 # controls
 mouse_button_left= 0
@@ -47,25 +48,38 @@ class Square:
 
     # get adjacent not-visible squares that aren't mines or flags
     def get_adjacent_recursive(self, state):
+        state.to_reveal.appendleft(self)
         for dy in [-block, 0, block]:
             for dx in [-block, 0, block]:
                 adj = state.board.get((self.x+dx, self.y+dy), None)
-                if adj != None and adj != self and adj.visible == False:
-                    adj.visible = True
+                if adj != None and adj != self and adj.visible == False and adj not in state.to_reveal:
+                    state.to_reveal.appendleft(adj)
                     if adj.adj == 0: # if adj is empty, run again
                         adj.get_adjacent_recursive(state)
     
     def get_adjacent_not_recursive(self, state):
+        # could create sets for adj_to_mines and empty_squares
+        # so it's easier to know which squares should be revealed
+        # do pathfinder to get all empty squares connected to the self
+        # reveal all adjecents to empty_squares to get the adj_to_mines visible as well
+        state.to_reveal.appendleft(self)
         i = 1
         already_checked = set()
         already_checked.add((self.x, self.y))
-        reveal_chunks = []
-        while i < 9:
+        while len(already_checked) < (screen_width//block*(screen_height-header_height)//block-1):
             r = range(-i*block, i*block+1, block)
-            reveal = [(self.x+dx, self.y+dy) for dy in r for dx in r if (self.x+dx, self.y+dy) not in already_checked and 0<=self.x+dx<=screen_width and header_height<=self.y+dy<=screen_height]
-            for sq in reveal:
-                already_checked.add(sq)
-            reveal_chunks.append(reveal)
+            whole_square = set(state.board[(self.x+dx, self.y+dy)] for dy in r for dx in r if (self.x+dx, self.y+dy) not in already_checked and 0<=self.x+dx<screen_width and header_height<=self.y+dy<screen_height)
+
+            outline = set(whole_square).difference(already_checked)
+            empty_squares = set()
+            for sq in outline:
+                if sq.adj > 0:
+                    continue
+                else:
+                    empty_squares.add(sq)
+            already_checked = already_checked.union(outline)
+            for sq in empty_squares:
+                state.to_reveal.appendleft(sq)
             i += 1
         
 
@@ -76,13 +90,17 @@ class State:
         self.mines = set()
         self.flags = set()
         self.mines_remaining = num_mines - len(self.flags)
-        self.start_time = get_time()
-        self.game_time = 0
-        self.score = 0
         self.selection = None
+        self.to_reveal = deque() # for animating reveal
+        self.revealing_square = None # for animating reveal
+        self.origin = None # for animating reveal
+        self.frame_count = 0 # for animating reveal
         self.win = False
         self.lose = False
         self.reset = False
+        self.start_time = get_time()
+        self.game_time = 0
+        self.score = 0
     
     def get_game_time(self):
         return get_time() - self.start_time
@@ -102,7 +120,7 @@ def create_board(state, num_mines, fixed_mines=False):
     state.board = {(x, y): Square(x, y) for y in range(header_height, screen_height, block) for x in range(0, screen_width, block)}
     # fixed_mines mines for debugging
     if fixed_mines == True:
-        state.mines = set(state.board[(mine_coord)] for mine_coord in [(30, 60), (180, 60), (60, 90), (0, 150), (210, 150), (90, 180), (270, 180), (0, 210), (60, 210), (60, 270)])
+        state.mines = set(state.board[(mine_coord)] for mine_coord in [(30, 60), (180, 120), (60, 90), (0, 150), (210, 150), (90, 180), (210, 180), (0, 210), (60, 210), (60, 270)])
 
         for mine in state.mines:
             state.board[(mine.x, mine.y)].mine = True
@@ -118,6 +136,7 @@ def create_board(state, num_mines, fixed_mines=False):
         mine.get_adjacent_to_mines(state)
 
 def update(state):
+    state.frame_count += 1
     if is_mouse_button_down(mouse_button_left): # hold down left click
         state.selection = get_mouse_position()
         # check if selection is on board and game isn't over
@@ -132,7 +151,6 @@ def update(state):
             state.selection = "reset"
         else:
             state.selection = None
-
 
     elif is_mouse_button_down(mouse_button_right): # hold down right click 
         state.selection = get_mouse_position()
@@ -165,7 +183,8 @@ def update(state):
                 state.selection = None
             else: # empty space, recursive reveal
                 state.selection.visible = True
-                state.selection.get_adjacent_recursive(state)
+                # state.selection.get_adjacent_recursive(state)
+                state.selection.get_adjacent_not_recursive(state)
                 state.selection = None
 
     elif is_mouse_button_released(mouse_button_right): # release right click
@@ -185,6 +204,14 @@ def update(state):
             
     state.mines_remaining = num_mines - len(state.flags)
 
+    # remove to_reveal one-by-one displaced by % frames and convert to visible squares
+    if state.revealing_square:
+        state.revealing_square.visible = True
+    if state.to_reveal:
+        if state.frame_count % 4 == 0:
+            state.revealing_square = state.to_reveal.pop()
+    else:
+        state.revealing_square = None
 
     
     # check for win 2 ways: if set(mines) matches set(flags)
@@ -209,8 +236,8 @@ def update(state):
         state.game_time = str(int(state.score))
 
     # for debugging - press m to reveal
-    # if is_key_pressed(key_m):
-        # print(f"start = {state.start_time}, end = {state.start_time+state.score} score = {state.score}")
+    if is_key_pressed(key_m):
+        print(f"{state.selection}")
 
 
 def render(state):
@@ -222,14 +249,17 @@ def render(state):
             draw_rectangle(square.x, square.y, 30, 30, BLUE)
         elif square == state.selection: # mouse pressed down but not released
             draw_rectangle(state.selection.x, state.selection.y, 30, 30, LIGHTGRAY)
+        elif square == state.revealing_square:
+            draw_rectangle(square.x, square.y, 30, 30, WHITE)
         elif square.visible == True:
-            draw_rectangle(square.x, square.y, 30, 30, GREEN) # empty squares
+            draw_rectangle(square.x, square.y, 30, 30, GREEN) # fill safe squares with green
             if square.adj == 1: # squares with 1; diff offset due to font size
                 draw_text(str(square.adj), square.x+12, square.y+5, 20, BLACK)
             if square.adj > 1: # number squares above 1; diff offset due to font size
                 draw_text(str(square.adj), square.x+10, square.y+5, 20, BLACK)
         else: # unselected/ unrevealed
             draw_rectangle(square.x, square.y, 30, 30, DARKGRAY)
+    
     
     # draw timer on left
     draw_rectangle(int(header_box.x), int(header_box.y), int(header_box.width), int(header_box.height), BLACK)
@@ -242,8 +272,7 @@ def render(state):
     draw_text(str(state.mines_remaining), screen_width-int(header_box.width//2)-int(header_box.x+header_box.width//(2+len_min_rem)), 20, 25, WHITE)
 
 
-
-    # header_box =    Rectangle(screen_width//18,          8,        block*2, block+block//2)
+    # header_box =   Rectangle(screen_width//18,          8,        block*2, block+block//2)
 
     # reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block         )
 
