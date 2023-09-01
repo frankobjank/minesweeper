@@ -13,6 +13,8 @@ header_height=block*2
 screen_width=block*10
 screen_height=block*10+header_height
 num_mines = 10
+# board_borders = 0 <= x <= screen_width; header_height <= y <= screen_height
+# board_borders = 0 <= x <= 300         ;            60 <= y <= 360
 
 # header buttons + boxes
 header_box = Rectangle(screen_width//18, 8, block*2, block+block//2) # timer and mines_remaining
@@ -44,14 +46,28 @@ class Square:
                     adj.adj += 1
 
     # get adjacent not-visible squares that aren't mines or flags
-    def get_adjacent_reveal(self, state):
+    def get_adjacent_recursive(self, state):
         for dy in [-block, 0, block]:
             for dx in [-block, 0, block]:
                 adj = state.board.get((self.x+dx, self.y+dy), None)
                 if adj != None and adj != self and adj.visible == False:
                     adj.visible = True
                     if adj.adj == 0: # if adj is empty, run again
-                        adj.get_adjacent_reveal(state)
+                        adj.get_adjacent_recursive(state)
+    
+    def get_adjacent_not_recursive(self, state):
+        i = 1
+        already_checked = set()
+        already_checked.add((self.x, self.y))
+        reveal_chunks = []
+        while i < 9:
+            r = range(-i*block, i*block+1, block)
+            reveal = [(self.x+dx, self.y+dy) for dy in r for dx in r if (self.x+dx, self.y+dy) not in already_checked and 0<=self.x+dx<=screen_width and header_height<=self.y+dy<=screen_height]
+            for sq in reveal:
+                already_checked.add(sq)
+            reveal_chunks.append(reveal)
+            i += 1
+        
 
 class State:
     def __init__(self):
@@ -79,7 +95,7 @@ def render_menu(state):
 
 def reset():
     new_state = State()
-    create_board(new_state, num_mines, fixed_mines=False)
+    create_board(new_state, num_mines, fixed_mines=True)
     return new_state
 
 def create_board(state, num_mines, fixed_mines=False):
@@ -149,7 +165,7 @@ def update(state):
                 state.selection = None
             else: # empty space, recursive reveal
                 state.selection.visible = True
-                state.selection.get_adjacent_reveal(state)
+                state.selection.get_adjacent_recursive(state)
                 state.selection = None
 
     elif is_mouse_button_released(mouse_button_right): # release right click
@@ -273,7 +289,7 @@ def draw_grid():
 def main():
     state = State()
     set_target_fps(60)
-    create_board(state, num_mines, fixed_mines=False)
+    create_board(state, num_mines, fixed_mines=True)
     init_window(screen_width, screen_height, "Minesweeper")
     while not window_should_close():
         update(state)
