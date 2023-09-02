@@ -104,8 +104,8 @@ def create_board(state, num_mines, fixed_mines=False):
 def update(state):
     if is_mouse_button_down(mouse_button_left): # hold down left click
         state.selection = get_mouse_position()
-        # check if selection is on board and game isn't over
-        if check_collision_point_rec(state.selection, state.board_rectangle) == True and state.lose == False and state.win == False:
+        # check if selection is on board and game isn't over. for some reason game crashes when mouse selection goes above the game window
+        if 0<state.selection.x<screen_width and 0<state.selection.y<screen_height and state.lose == False and state.win == False:
             state.selection.x -= state.selection.x % 30
             state.selection.y -= state.selection.y % 30
             state.selection = state.board.get((state.selection.x, state.selection.y), None)
