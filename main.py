@@ -36,7 +36,7 @@ class Square:
         self.blow_up = False
 
     def __repr__(self):
-        return f"({self.x}, {self.y}), mine = {self.mine}, flag = {self.flag}, visible = {self.visible}"
+        return f"Square at ({self.x}, {self.y}), mine = {self.mine}, adj = {self.adj}"
     
     # get number of adjacent mines but not mines themselves. Make sure it's in range i.e. .get()
     def get_adjacent_to_mines(self, state):
@@ -58,36 +58,18 @@ class Square:
                         adj.get_adjacent_recursive(state)
     
     def get_adjacent_not_recursive(self, state):
-        # could create sets for adj_to_mines and empty_squares
-        # so it's easier to know which squares should be revealed
-        # do pathfinder to get all empty squares connected to the self
-        # reveal all adjecents to empty_squares to get the adj_to_mines visible as well
-        state.to_reveal.appendleft(self)
-        i = 1
-        already_checked = set()
-        already_checked.add((self.x, self.y))
-        while len(already_checked) < (screen_width//block*(screen_height-header_height)//block-1):
-            r = range(-i*block, i*block+1, block)
-            whole_square = set(state.board[(self.x+dx, self.y+dy)] for dy in r for dx in r if (self.x+dx, self.y+dy) not in already_checked and 0<=self.x+dx<screen_width and header_height<=self.y+dy<screen_height)
+        pass
 
-            outline = set(whole_square).difference(already_checked)
-            empty_squares = set()
-            for sq in outline:
-                if sq.adj > 0:
-                    continue
-                else:
-                    empty_squares.add(sq)
-            already_checked = already_checked.union(outline)
-            for sq in empty_squares:
-                state.to_reveal.appendleft(sq)
-            i += 1
-        
 
 class State:
     def __init__(self):
-        self.board = {}
         self.board_rectangle = Rectangle(0, header_height, screen_width, screen_height)
+        self.board = {}
+        # board elements
         self.mines = set()
+        self.adjacent_to_mines = set()
+        self.empty_squares_paths = set()
+
         self.flags = set()
         self.mines_remaining = num_mines - len(self.flags)
         self.selection = None
@@ -134,6 +116,18 @@ def create_board(state, num_mines, fixed_mines=False):
     # calc adj to mines
     for mine in state.mines:
         mine.get_adjacent_to_mines(state)
+    empty_squares = []
+    for coord, sq in state.board.items():
+        if sq.mine == False:
+            if sq.adj > 0:
+                state.adjacent_to_mines.add(sq)
+            else:
+                empty_squares.append(sq)
+    # for sq in empty_squares:
+    #     while empty_squares:
+    #         compare = empty_squares.pop()
+    #         if (sq.x+30, sq.y) == (compare.x, compare.y):
+
 
 def update(state):
     state.frame_count += 1
