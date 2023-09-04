@@ -60,6 +60,16 @@ class Square:
     def get_adjacent_not_recursive(self, state):
         pass
 
+    def get_neighbors(self, state):
+        neighbors = set()
+        for dy in [-block, 0, block]:
+            for dx in [-block, 0, block]:
+                adj = state.board.get((self.x+dx, self.y+dy), None)
+                if adj != None and adj != self:
+                    neighbors.add(adj)
+
+        return neighbors
+
 
 class State:
     def __init__(self):
