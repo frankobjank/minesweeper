@@ -234,17 +234,20 @@ def update(state):
                     mine.flag = True
                     state.flags.add(mine)
 
+    # don't start clock until square is revealed
+    if state.start_clock == False:
+        state.start_time = get_time()
+        for square in state.board.values():
+            if square.visible == True:
+                state.start_clock = True
+                break
+
     # calc game time
     if state.win == False and state.lose == False:
         state.game_time = str(int(state.get_game_time()))
     else:
         state.game_time = str(int(state.score))
 
-    if state.start_clock == False:
-        for square in state.board.values():
-            if square.visible == True:
-                state.start_clock = True
-                break
 
 
     # for debugging - press m to reveal
