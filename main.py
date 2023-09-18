@@ -3,11 +3,6 @@ import time
 from pyray import *
 from collections import deque
 
-# controls
-mouse_button_left= 0
-mouse_button_right= 1
-key_m= 77
-
 # game board constants
 block = 30
 header_height=block*2
@@ -142,7 +137,7 @@ def create_board(state, num_mines, fixed_mines=False):
 
 def update(state):
     state.frame_count += 1
-    if is_mouse_button_down(mouse_button_left): # hold down left click
+    if is_mouse_button_down(MouseButton.MOUSE_BUTTON_LEFT): # hold down left click
         state.selection = get_mouse_position()
         # check if selection is on board and game isn't over. for some reason game crashes when mouse selection goes above the game window
         if 0<state.selection.x<screen_width and 0<state.selection.y<screen_height and state.lose == False and state.win == False:
@@ -157,7 +152,7 @@ def update(state):
         else:
             state.selection = None
 
-    elif is_mouse_button_down(mouse_button_right): # hold down right click 
+    elif is_mouse_button_down(MouseButton.MOUSE_BUTTON_RIGHT): # hold down right click 
         state.selection = get_mouse_position()
         # check if selection on board and game isn't over
         if check_collision_point_rec(state.selection, state.board_rectangle) == True and state.lose == False and state.win == False:
@@ -172,7 +167,7 @@ def update(state):
         else:
             state.selection = None
 
-    elif is_mouse_button_released(mouse_button_left): # release left click
+    elif is_mouse_button_released(MouseButton.MOUSE_BUTTON_LEFT): # release left click
         if state.selection == "reset":
             state.reset = True
             return
@@ -192,7 +187,7 @@ def update(state):
                 # state.selection.get_adjacent_not_recursive(state)
                 state.selection = None
 
-    elif is_mouse_button_released(mouse_button_right): # release right click
+    elif is_mouse_button_released(MouseButton.MOUSE_BUTTON_RIGHT): # release right click
         if state.selection == "reset":
             state.reset = True
             return
@@ -251,7 +246,7 @@ def update(state):
 
 
     # for debugging - press m to reveal
-    if is_key_pressed(key_m):
+    if is_key_pressed(KeyboardKey.KEY_M):
         print(f"{state.selection}")
 
 
