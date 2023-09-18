@@ -58,7 +58,7 @@ class Square:
                     if adj.adj == 0: # if adj is empty, run again
                         adj.get_adjacent_reveal(state)
     
-    def get_adjacent_
+    # def get_adjacent_
 
 class State:
     def __init__(self):

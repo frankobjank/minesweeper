@@ -90,6 +90,7 @@ class State:
         self.win = False
         self.lose = False
         self.reset = False
+        self.start_clock = False
         self.start_time = get_time()
         self.game_time = 0
         self.score = 0
@@ -187,8 +188,8 @@ def update(state):
                 state.selection = None
             else: # empty space, recursive reveal
                 state.selection.visible = True
-                # state.selection.get_adjacent_recursive(state)
-                state.selection.get_adjacent_not_recursive(state)
+                state.selection.get_adjacent_recursive(state)
+                # state.selection.get_adjacent_not_recursive(state)
                 state.selection = None
 
     elif is_mouse_button_released(mouse_button_right): # release right click
@@ -238,6 +239,13 @@ def update(state):
         state.game_time = str(int(state.get_game_time()))
     else:
         state.game_time = str(int(state.score))
+
+    if state.start_clock == False:
+        for square in state.board.values():
+            if square.visible == True:
+                state.start_clock = True
+                break
+
 
     # for debugging - press m to reveal
     if is_key_pressed(key_m):
@@ -336,6 +344,7 @@ def main():
 main()
 
 # to-do:
+# only start timer after first move, clock_start variable?
 # save high-scores
 # more difficulties and window sizing
     # for incorporating medium and hard, start with menu to choose difficulty
