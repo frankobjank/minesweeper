@@ -101,7 +101,7 @@ def render_menu(state):
 
 def reset():
     new_state = State()
-    create_board(new_state, num_mines, fixed_mines=True)
+    create_board(new_state, num_mines) #, fixed_mines=True)
     return new_state
 
 def create_board(state, num_mines, fixed_mines=False):
@@ -208,8 +208,9 @@ def update(state):
     if state.revealing_square:
         state.revealing_square.visible = True
     if state.to_reveal:
-        if state.frame_count % 2 == 0:
-            state.revealing_square = state.to_reveal.pop()
+        # speed of reveal
+        # if state.frame_count % 2 == 0:
+        state.revealing_square = state.to_reveal.pop()
     else:
         state.revealing_square = None
 
@@ -328,7 +329,7 @@ def draw_grid():
 def main():
     state = State()
     set_target_fps(60)
-    create_board(state, num_mines, fixed_mines=True)
+    create_board(state, num_mines) #, fixed_mines=True)
     init_window(screen_width, screen_height, "Minesweeper")
     while not window_should_close():
         update(state)
