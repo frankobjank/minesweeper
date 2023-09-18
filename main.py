@@ -42,13 +42,22 @@ class Square:
                     adj.adj += 1
 
     # get adjacent not-visible squares that aren't mines or flags
-    def get_adjacent_recursive(self, state):
+    def get_adjacent_recursive_animation(self, state):
         state.to_reveal.appendleft(self)
         for dy in [-block, 0, block]:
             for dx in [-block, 0, block]:
                 adj = state.board.get((self.x+dx, self.y+dy), None)
                 if adj != None and adj != self and adj.visible == False and adj not in state.to_reveal:
                     state.to_reveal.appendleft(adj)
+                    if adj.adj == 0: # if adj is empty, run again
+                        adj.get_adjacent_recursive_animation(state)
+    
+    def get_adjacent_recursive(self, state):
+        for dy in [-block, 0, block]:
+            for dx in [-block, 0, block]:
+                adj = state.board.get((self.x+dx, self.y+dy), None)
+                if adj != None and adj != self and adj.visible == False:
+                    adj.visible = True
                     if adj.adj == 0: # if adj is empty, run again
                         adj.get_adjacent_recursive(state)
     
@@ -140,7 +149,7 @@ def update(state):
     if is_mouse_button_down(MouseButton.MOUSE_BUTTON_LEFT): # hold down left click
         state.selection = get_mouse_position()
         # check if selection is on board and game isn't over. for some reason game crashes when mouse selection goes above the game window
-        if 0<state.selection.x<screen_width and 0<state.selection.y<screen_height and state.lose == False and state.win == False:
+        if 0<state.selection.x<screen_width and header_height<state.selection.y<screen_height and state.lose == False and state.win == False:
             state.selection.x -= state.selection.x % 30
             state.selection.y -= state.selection.y % 30
             state.selection = state.board.get((state.selection.x, state.selection.y), None)
@@ -185,6 +194,8 @@ def update(state):
                 state.selection.visible = True
                 state.selection.get_adjacent_recursive(state)
                 # state.selection.get_adjacent_not_recursive(state)
+                # ANIMATION OPTION
+                # state.selection.get_adjacent_recursive_animation(state)
                 state.selection = None
 
     elif is_mouse_button_released(MouseButton.MOUSE_BUTTON_RIGHT): # release right click
@@ -204,15 +215,16 @@ def update(state):
             
     state.mines_remaining = num_mines - len(state.flags)
 
+    # ANIMATION OPTION
     # remove to_reveal one-by-one displaced by % frames and convert to visible squares
-    if state.revealing_square:
-        state.revealing_square.visible = True
-    if state.to_reveal:
-        # speed of reveal
-        # if state.frame_count % 2 == 0:
-        state.revealing_square = state.to_reveal.pop()
-    else:
-        state.revealing_square = None
+    # if state.revealing_square:
+    #     state.revealing_square.visible = True
+    # if state.to_reveal:
+    #     # speed of reveal
+    #     # if state.frame_count % 2 == 0:
+    #     state.revealing_square = state.to_reveal.pop()
+    # else:
+    #     state.revealing_square = None
 
     
     # check for win 2 ways: if set(mines) matches set(flags)
@@ -230,7 +242,7 @@ def update(state):
                     mine.flag = True
                     state.flags.add(mine)
 
-    # don't start clock until square is revealed
+    # don't start clock until first square is revealed
     if state.start_clock == False:
         state.start_time = get_time()
         for square in state.board.values():
@@ -245,12 +257,6 @@ def update(state):
         state.game_time = str(int(state.score))
 
 
-
-    # for debugging - press m to reveal
-    if is_key_pressed(KeyboardKey.KEY_M):
-        print(f"{state.selection}")
-
-
 def render(state):
     begin_drawing()
     clear_background(LIGHTGRAY)
@@ -260,8 +266,9 @@ def render(state):
             draw_rectangle(square.x, square.y, 30, 30, BLUE)
         elif square == state.selection: # mouse pressed down but not released
             draw_rectangle(state.selection.x, state.selection.y, 30, 30, LIGHTGRAY)
-        elif square == state.revealing_square:
-            draw_rectangle(square.x, square.y, 30, 30, WHITE)
+        # ANIMATION OPTION
+        # elif square == state.revealing_square:
+            # draw_rectangle(square.x, square.y, 30, 30, WHITE)
         elif square.visible == True:
             draw_rectangle(square.x, square.y, 30, 30, GREEN) # fill safe squares with green
             if square.adj == 1: # squares with 1; diff offset due to font size
@@ -299,7 +306,11 @@ def render(state):
     if state.lose == True:
         render_lose(state)
 
-    draw_grid()
+    # draw_grid
+    for x in range(0, screen_width, block):
+        draw_line(x, header_height, x, screen_height, BLACK)
+    for y in range(header_height, screen_height, block):
+        draw_line(0, y, screen_width, y, BLACK)
 
     end_drawing()
 
@@ -319,13 +330,6 @@ def render_lose(state):
             draw_line_ex((flag.x, flag.y+block), (flag.x+block, flag.y), 2, RED)
 
 
-def draw_grid():
-    for x in range(0, screen_width, block):
-        draw_line(x, header_height, x, screen_height, BLACK)
-    for y in range(header_height, screen_height, block):
-        draw_line(0, y, screen_width, y, BLACK)
-
-
 def main():
     state = State()
     set_target_fps(60)
@@ -343,7 +347,6 @@ def main():
 main()
 
 # to-do:
-# only start timer after first move, clock_start variable?
 # save high-scores
 # more difficulties and window sizing
     # for incorporating medium and hard, start with menu to choose difficulty
