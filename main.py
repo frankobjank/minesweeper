@@ -14,7 +14,8 @@ num_mines = 10
 
 # header buttons + boxes
 header_box = Rectangle(screen_width//18, 8, block*2, block+block//2) # timer and mines_remaining
-reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block)
+reset_button = Rectangle(screen_width//2-(block*1.5), block//2, block*3, block)
+# animate_button = Rectangle(screen_width//2-block*2.5, block//2, block, block)
 
 def get_random_coords():
     return Vector2(random.randrange(0, screen_width, 30), random.randrange(header_height, screen_height, 30))
@@ -87,10 +88,6 @@ class State:
         self.flags = set()
         self.mines_remaining = num_mines - len(self.flags)
         self.selection = None
-        self.to_reveal = deque() # for animating reveal
-        self.revealing_square = None # for animating reveal
-        self.origin = None # for animating reveal
-        self.frame_count = 0 # for animating reveal
         self.win = False
         self.lose = False
         self.reset = False
@@ -98,6 +95,12 @@ class State:
         self.start_time = get_time()
         self.game_time = 0
         self.score = 0
+
+        self.animate = False
+        self.to_reveal = deque() # for animating reveal
+        self.revealing_square = None # for animating reveal
+        self.origin = None # for animating reveal
+        self.frame_count = 0 # for animating reveal
     
     def get_game_time(self):
         return get_time() - self.start_time
@@ -149,7 +152,7 @@ def update(state):
     if is_mouse_button_down(MouseButton.MOUSE_BUTTON_LEFT): # hold down left click
         state.selection = get_mouse_position()
         # check if selection is on board and game isn't over. for some reason game crashes when mouse selection goes above the game window
-        if 0<state.selection.x<screen_width and header_height<state.selection.y<screen_height and state.lose == False and state.win == False:
+        if 0 < state.selection.x < screen_width and header_height < state.selection.y < screen_height and state.lose == False and state.win == False:
             state.selection.x -= state.selection.x % 30
             state.selection.y -= state.selection.y % 30
             state.selection = state.board.get((state.selection.x, state.selection.y), None)
@@ -295,12 +298,21 @@ def render(state):
     # reset_button = Rectangle(screen_width//2-(block*2), block//2, block*4, block         )
 
     # draw reset button, depending on state.win
-    
-    # draw_rectangle(int(reset_button.x), int(reset_button.y), int(reset_button.width), int(reset_button.height), GRAY)
-    if state.win != True:
-        draw_text("Reset", screen_width//2-block-4, 20, 25, BLACK)
-    elif state.win == True:
-        draw_text("Congrats!!!!", screen_width//2-block-25, 20, 20, BLACK)
+    if state.selection == "reset":
+        draw_rectangle(int(reset_button.x), int(reset_button.y), int(reset_button.width), int(reset_button.height), BLACK)
+        if state.win != True:
+            draw_text("Reset", screen_width//2-block-4, 20, 25, WHITE)
+        elif state.win == True:
+            draw_text("Good job!", screen_width//2-block-15, 20, 20, WHITE)
+
+    else:
+        draw_rectangle(int(reset_button.x), int(reset_button.y), int(reset_button.width), int(reset_button.height), GRAY)
+        if state.win != True:
+            draw_text("Reset", screen_width//2-block-4, 20, 25, BLACK)
+        elif state.win == True:
+            draw_text("Good job!", screen_width//2-block-15, 20, 20, BLACK)
+
+    # draw_rectangle(int(animate_button.x), int(animate_button.y), int(animate_button.width), int(animate_button.height), RED)
 
     # if state.lose, x out flags and reveal mines
     if state.lose == True:
