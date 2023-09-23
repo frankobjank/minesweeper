@@ -3,12 +3,23 @@ import time
 from pyray import *
 from collections import deque
 
+def set_difficulty(difficulty):
+    # width, height, num_mines
+    if difficulty == "easy":
+        return 10, 10, 10
+    if difficulty == "medium":
+        return 16, 16, 40
+    if difficulty == "hard":
+        return 30, 16, 99
+
+w, h, num_mines = set_difficulty("hard")
+
 # game board constants
 block = 30
 header_height=block*2
-screen_width=block*10
-screen_height=block*10+header_height
-num_mines = 10
+screen_width=block*w
+screen_height=block*h+header_height
+
 # board_borders = 0 <= x <= screen_width; header_height <= y <= screen_height
 # board_borders = 0 <= x <= 300         ;            60 <= y <= 360
 
@@ -105,11 +116,11 @@ class State:
     def get_game_time(self):
         return get_time() - self.start_time
 
-def update_menu(state):
+def update_menu():
     pass
 
 def render_menu(state):
-    pass
+    draw_text("Minesweeper", (screen_width-measure_text("Minesweeper", 16))//2, 10, 16, BLACK)
 
 def reset():
     new_state = State()
@@ -215,6 +226,31 @@ def update(state):
                 state.selection.flag = False
                 state.flags.remove(state.selection)
                 state.selection = None
+
+    # F key can also flag and unflag to get around mac right click issues
+    elif is_key_pressed(KeyboardKey.KEY_F):
+        state.selection = get_mouse_position()
+        # check if selection on board and game isn't over
+        if check_collision_point_rec(state.selection, state.board_rectangle) == True and state.lose == False and state.win == False:
+            state.selection.x -= state.selection.x % 30
+            state.selection.y -= state.selection.y % 30
+            state.selection = state.board.get((state.selection.x, state.selection.y), None)
+            if state.selection.visible == True: # (allows selection of flags)
+                state.selection = None
+        
+        if state.selection != None and state.selection.visible == False:
+            if state.selection.flag == False:
+                state.selection.flag = True
+                state.flags.add(state.selection)
+                state.selection = None
+            elif state.selection.flag == True:
+                state.selection.flag = False
+                state.flags.remove(state.selection)
+                state.selection = None
+
+
+
+
             
     state.mines_remaining = num_mines - len(state.flags)
 

@@ -1,6 +1,5 @@
 .venv/
 .DS_Store
-minesweeper_test.py
 __pycache__/main.cpython-310.pyc
 archive
 build
