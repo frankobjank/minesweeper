@@ -44,67 +44,80 @@ set_target_fps(60)
 display_menu = True
 
 # from menu: continue to game, do nothing, or exit
-def menu_test():
-    init_window(300, 360, "Minesweeper")
+def menu_window(window_pointer):
+    init_window(300, 360, "Menu")
     while not window_should_close():
         mouse = get_mouse_position()
-        continue_button = Rectangle(0, 0, 300, 120)
-        exit_button = Rectangle(0, 240, 300, 120)
+        green_button = Rectangle(0, 0, 300, 120)
+        red_button = Rectangle(0, 120, 300, 120)
+        exit_button = Rectangle(0, 300, 100, 60)
 
         begin_drawing()
-        clear_background(RAYWHITE)
+        clear_background(fade(RAYWHITE, .2))
         
-        draw_rectangle_rec(continue_button, GREEN)
-        draw_rectangle_rec(exit_button, RED)
+        draw_rectangle_rec(green_button, GREEN)
+        draw_rectangle_rec(red_button, RED)
+        draw_rectangle_rec(exit_button, BLACK)
 
 
         if is_mouse_button_released(MouseButton.MOUSE_BUTTON_LEFT): 
-            if check_collision_point_rec(mouse, continue_button):
-                print("go to game")
-                draw_rectangle_lines_ex(continue_button, 3, BLACK)
-                menu_state = "continue"
+            if check_collision_point_rec(mouse, green_button):
+                print("go to green")
+                window_pointer = "green"
+                break
+            elif check_collision_point_rec(mouse, red_button):
+                print("go to red")
+                window_pointer = "red"
                 break
             elif check_collision_point_rec(mouse, exit_button):
-                draw_rectangle_lines_ex(exit_button, 3, BLACK)
                 print("exit")
-                menu_state = "exit"
-            else:
-                print("do nothing")
+                window_pointer = "exit"
                 break
         end_drawing()
     print("closing window")
     close_window()
 
-    return menu_state
+    return window_pointer
 
-def window_test():
-    menu_state = menu_test()
-    if menu_state == "exit":
-        return
-    if menu_state == "continue":
-        pass
-    
 
-    init_window(100, 100, "Window 2") # f"Minesweeper {difficulty}")
+def color_window(window_pointer, color1, color2):
+    init_window(300, 300, "color") # f"Minesweeper {difficulty}")
 
     while not window_should_close():
         mouse = get_mouse_position()
-        button = Rectangle(40, 40, 20, 20)
+        button_top = Rectangle(0, 0, 300, 100)
         begin_drawing()
-        clear_background(BLACK)
-        draw_rectangle_rec(button, WHITE)
+        clear_background(color2)
+        draw_rectangle_rec(button_top, color1)
 
-        if check_collision_point_rec(mouse, button):
-            draw_rectangle_rec(button, GRAY)
+        if check_collision_point_rec(mouse, button_top):
+            draw_rectangle_rec(button_top, GRAY)
             if is_mouse_button_pressed(MouseButton.MOUSE_BUTTON_LEFT):
-                display_menu = True
+                window_pointer = "display_menu"
                 break
         end_drawing()
+    print("returning to menu")
     close_window()
-    # if display_menu == True:
+    return window_pointer
 
 
-window_test()
+def window_test(window_pointer):
+    window_pointer = menu_window(window_pointer)
+    if window_pointer == "green":
+        window_pointer = color_window(window_pointer, GREEN, BLUE)
+    elif window_pointer == "red":
+        window_pointer = color_window(window_pointer, RED, BLACK)
+    elif window_pointer == "exit":
+        return
+    
+
+    if window_pointer == "display_menu":
+        window_pointer = window_test(window_pointer)
+    else:
+        return
+
+window_pointer = "display_menu"
+window_test(window_pointer)
 
 # I believe the issue of checking box twice has been resolved
 # def code_test(x, y):
