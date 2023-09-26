@@ -3,6 +3,7 @@ import time
 from pyray import *
 from collections import deque
 from datetime import date
+from enum import Enum
 
 # path to Python interpreter for pylance to recognize raylib/pyray
 # /Users/jacobfrank/sources/minesweeper_rl/.venv/bin/python3
@@ -43,36 +44,47 @@ def initialize_board(difficulty):
 set_target_fps(60)
 display_menu = True
 
-# from menu: continue to game, do nothing, or exit
 def menu_window(window_pointer):
-    init_window(300, 360, "Menu")
+    screen_width = 300
+    screen_height = 360
+    init_window(screen_width, screen_height, "Menu")
     while not window_should_close():
+        # set constants
+        selection = None
         mouse = get_mouse_position()
-        green_button = Rectangle(0, 0, 300, 120)
-        red_button = Rectangle(0, 120, 300, 120)
-        exit_button = Rectangle(0, 300, 100, 60)
-
-        begin_drawing()
-        clear_background(fade(RAYWHITE, .2))
+        button_len = 100
+        easy = {"Easy": Rectangle((screen_width-button_len)//2, 90, button_len, 50)}
+        medium = {"Medium": Rectangle((screen_width-button_len)//2, 150, button_len, 50)}
+        hard = {"Hard": Rectangle((screen_width-button_len)//2, 220, button_len, 50)}
+        exit = {"Exit": Rectangle((screen_width-button_len)//2, 300, button_len, 50)}
+        buttons = [easy, medium, hard, exit]
+        # get user input
+        if is_mouse_button_released(MouseButton.MOUSE_BUTTON_LEFT):
+            for button in buttons:
+                for name, rec in button.items():
+                    if check_collision_point_rec(mouse, rec):
+                        window_pointer = name
+                        break
         
-        draw_rectangle_rec(green_button, GREEN)
-        draw_rectangle_rec(red_button, RED)
-        draw_rectangle_rec(exit_button, BLACK)
+        # render
+        begin_drawing()
+        clear_background(LIME)
+        
+        draw_text("Minesweeper", 0, 10, 50, BLACK)
+        for button in buttons:
+            for name, rec in button.items():
+                draw_rectangle_rec(rec, GRAY)
+                draw_text(name, int(rec.x), int(rec.y), 30, BLACK)
 
+        # draw_rectangle_rec(easy_button, GRAY)
+        # draw_text("Easy", int(easy_button.x), int(easy_button.y), 30, BLACK)
+        # draw_rectangle_rec(medium_button, GRAY)
+        # draw_text("Medium", int(medium_button.x), int(medium_button.y), 30, BLACK)
+        # draw_rectangle_rec(hard_button, GRAY)
+        # draw_text("Hard", int(hard_button.x), int(hard_button.y), 30, BLACK)
+        # draw_rectangle_rec(exit_button, GRAY)
+        # draw_text("Exit", int(exit_button.x), int(exit_button.y), 30, BLACK)
 
-        if is_mouse_button_released(MouseButton.MOUSE_BUTTON_LEFT): 
-            if check_collision_point_rec(mouse, green_button):
-                print("go to green")
-                window_pointer = "green"
-                break
-            elif check_collision_point_rec(mouse, red_button):
-                print("go to red")
-                window_pointer = "red"
-                break
-            elif check_collision_point_rec(mouse, exit_button):
-                print("exit")
-                window_pointer = "exit"
-                break
         end_drawing()
     print("closing window")
     close_window()
@@ -116,8 +128,10 @@ def window_test(window_pointer):
     else:
         return
 
+
 window_pointer = "display_menu"
-window_test(window_pointer)
+# window_test(window_pointer)
+# menu_window(window_pointer)
 
 # I believe the issue of checking box twice has been resolved
 # def code_test(x, y):
