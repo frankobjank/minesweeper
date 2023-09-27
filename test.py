@@ -21,13 +21,13 @@ from enum import Enum
 
 
 # game board constants
-def initialize_board(difficulty):
+def initialize_board(window_pointer):
     # width, height, num_mines
-    if difficulty == "easy":
+    if window_pointer == "Easy":
         w, h, num_mines = 10, 10, 10
-    if difficulty == "medium":
+    if window_pointer == "Medium":
         w, h, num_mines = 16, 16, 40
-    if difficulty == "hard":
+    if window_pointer == "Hard":
         w, h, num_mines = 30, 16, 99
 
     block = 30
@@ -49,8 +49,8 @@ def menu_window(window_pointer):
     screen_height = 360
     init_window(screen_width, screen_height, "Menu")
     while not window_should_close():
+
         # set constants
-        selection = None
         mouse = get_mouse_position()
         button_len = 100
         easy = {"Easy": Rectangle((screen_width-button_len)//2, 90, button_len, 50)}
@@ -58,6 +58,7 @@ def menu_window(window_pointer):
         hard = {"Hard": Rectangle((screen_width-button_len)//2, 220, button_len, 50)}
         exit = {"Exit": Rectangle((screen_width-button_len)//2, 300, button_len, 50)}
         buttons = [easy, medium, hard, exit]
+
         # get user input
         if is_mouse_button_released(MouseButton.MOUSE_BUTTON_LEFT):
             for button in buttons:
@@ -65,73 +66,64 @@ def menu_window(window_pointer):
                     if check_collision_point_rec(mouse, rec):
                         window_pointer = name
                         break
-        
+        # update
+        if window_pointer != "Menu":
+            break
+
         # render
         begin_drawing()
-        clear_background(LIME)
-        
-        draw_text("Minesweeper", 0, 10, 50, BLACK)
+        clear_background(BLACK)
+        draw_text("Minesweeper", 0, 10, 50, WHITE)
         for button in buttons:
             for name, rec in button.items():
-                draw_rectangle_rec(rec, GRAY)
-                draw_text(name, int(rec.x), int(rec.y), 30, BLACK)
-
-        # draw_rectangle_rec(easy_button, GRAY)
-        # draw_text("Easy", int(easy_button.x), int(easy_button.y), 30, BLACK)
-        # draw_rectangle_rec(medium_button, GRAY)
-        # draw_text("Medium", int(medium_button.x), int(medium_button.y), 30, BLACK)
-        # draw_rectangle_rec(hard_button, GRAY)
-        # draw_text("Hard", int(hard_button.x), int(hard_button.y), 30, BLACK)
-        # draw_rectangle_rec(exit_button, GRAY)
-        # draw_text("Exit", int(exit_button.x), int(exit_button.y), 30, BLACK)
-
+                draw_rectangle_rec(rec, LIGHTGRAY)
+                draw_text(name, int(rec.x), int(rec.y), 30, BLACK)  
         end_drawing()
-    print("closing window")
     close_window()
+    if window_pointer != "Easy" and window_pointer != "Medium" and window_pointer != "Hard":
+        window_pointer = "Exit"
 
     return window_pointer
 
 
-def color_window(window_pointer, color1, color2):
-    init_window(300, 300, "color") # f"Minesweeper {difficulty}")
+def game_window(window_pointer):
+    screen_width, screen_height = initialize_board(window_pointer)
+    init_window(screen_width, screen_height, "Minesweeper")
 
     while not window_should_close():
         mouse = get_mouse_position()
-        button_top = Rectangle(0, 0, 300, 100)
+        menu_button = Rectangle(10, 10, 100, 50)
+        
         begin_drawing()
-        clear_background(color2)
-        draw_rectangle_rec(button_top, color1)
+        clear_background(GRAY)
 
-        if check_collision_point_rec(mouse, button_top):
-            draw_rectangle_rec(button_top, GRAY)
-            if is_mouse_button_pressed(MouseButton.MOUSE_BUTTON_LEFT):
-                window_pointer = "display_menu"
+        if check_collision_point_rec(mouse, menu_button):
+            if is_mouse_button_released(MouseButton.MOUSE_BUTTON_LEFT):
+                window_pointer = "Menu"
                 break
+
+        draw_rectangle_rec(menu_button, RED)
         end_drawing()
-    print("returning to menu")
     close_window()
     return window_pointer
 
 
-def window_test(window_pointer):
+def main(window_pointer):
     window_pointer = menu_window(window_pointer)
-    if window_pointer == "green":
-        window_pointer = color_window(window_pointer, GREEN, BLUE)
-    elif window_pointer == "red":
-        window_pointer = color_window(window_pointer, RED, BLACK)
-    elif window_pointer == "exit":
+    if window_pointer == "Easy" or window_pointer == "Medium" or window_pointer == "Hard":
+        window_pointer = game_window(window_pointer)
+    elif window_pointer == "Exit":
         return
     
-
-    if window_pointer == "display_menu":
-        window_pointer = window_test(window_pointer)
+    if window_pointer == "Menu":
+        window_pointer = main(window_pointer)
     else:
         return
 
 
-window_pointer = "display_menu"
-# window_test(window_pointer)
-# menu_window(window_pointer)
+window_pointer = "Menu"
+main(window_pointer)
+
 
 # I believe the issue of checking box twice has been resolved
 # def code_test(x, y):
