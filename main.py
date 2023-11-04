@@ -12,7 +12,7 @@ def set_difficulty(difficulty):
     if difficulty == "hard":
         return 30, 16, 99
 
-w, h, num_mines = set_difficulty("hard")
+w, h, num_mines = set_difficulty("easy")
 
 # game board constants
 block = 30
