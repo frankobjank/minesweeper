@@ -1,6 +1,5 @@
 .venv/
 .DS_Store
-__pycache__/main.cpython-310.pyc
-archive
-build
-dist
+__pycache__/
+minesweeper.code-workspace
+.vscode/

@@ -3,7 +3,7 @@ import time
 from pyray import *
 from collections import deque
 
-def set_difficulty(difficulty):
+def set_dimensions(difficulty):
     # width, height, num_mines
     if difficulty == "easy":
         return 10, 10, 10
@@ -12,7 +12,7 @@ def set_difficulty(difficulty):
     if difficulty == "hard":
         return 30, 16, 99
 
-w, h, num_mines = set_difficulty("easy")
+w, h, num_mines = set_dimensions("easy")
 
 # game board constants
 block = 30
