@@ -1,19 +1,25 @@
 # Minesweeper
 
-Getting started:
+Minesweeper implemented with Python 3.11.5 via Raylib. Created for practice creating an application for macOS and getting it to work on Windows and Linux.
 
-Create a virtual environment:
+To run from command line, create a virtual environment:
 ```
-$ python3 -m venv .venv (only do this for first time setup)
-$ source .venv/bin/activate
+python3 -m venv .venv (only do this for first time setup)
 ```
-Update pip and install setuptools and raylib:
+if running macOS or Linux:
 ```
-python3 -m pip install --upgrade pip
-python3 -m pip install setuptools
-python3 -m pip install raylib
+source .venv/bin/activate
 ```
-Or use this to automate the above process
+if running Windows:
+```
+.venv\Scripts\activate
+```
+Requirements:<br>
+cffi==1.15.1<br>
+inflection==0.5.1<br>
+pycparser==2.21<br>
+raylib==5.0.0.2<br><br>
+Use this to install all requirements:
 ```
 pip install -r requirements.txt
 ```
