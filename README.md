@@ -22,10 +22,10 @@ if running Windows:
 
 Requirements:
 
-* cffi==1.15.1
-* inflection==0.5.1
-* pycparser==2.21
-* raylib==5.0.0.2
+* cffi
+* inflection
+* pycparser
+* raylib
 
 Use this to install all requirements:
 
