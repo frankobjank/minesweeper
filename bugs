@@ -1,3 +1,6 @@
-Win:
+FIXED:
 Counts win when all flags are placed; win should not depend on flags.
 All non-mines must be opened to win.
+
+NOT FIXED
+Pressing f will cause crash when mouse not over board
