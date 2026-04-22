@@ -107,7 +107,7 @@ class State:
         self.game_time = 0
         self.score = 0
 
-        self.animate = False
+        self.animate = True
         self.to_reveal = deque() # for animating reveal
         self.revealing_square = None # for animating reveal
         self.origin = None # for animating reveal
@@ -206,10 +206,10 @@ def update(state):
                 state.selection = None
             else: # empty space, recursive reveal
                 state.selection.visible = True
-                state.selection.get_adjacent_recursive(state)
+                # state.selection.get_adjacent_recursive(state)
                 # state.selection.get_adjacent_not_recursive(state)
                 # ANIMATION OPTION
-                # state.selection.get_adjacent_recursive_animation(state)
+                state.selection.get_adjacent_recursive_animation(state)
                 state.selection = None
 
     elif is_mouse_button_released(MouseButton.MOUSE_BUTTON_RIGHT): # release right click
@@ -256,14 +256,14 @@ def update(state):
 
     # ANIMATION OPTION
     # remove to_reveal one-by-one displaced by % frames and convert to visible squares
-    # if state.revealing_square:
-    #     state.revealing_square.visible = True
-    # if state.to_reveal:
-    #     # speed of reveal
-    #     # if state.frame_count % 2 == 0:
-    #     state.revealing_square = state.to_reveal.pop()
-    # else:
-    #     state.revealing_square = None
+    if state.revealing_square:
+        state.revealing_square.visible = True
+    if state.to_reveal:
+        # speed of reveal
+        if state.frame_count % 2 == 0:
+            state.revealing_square = state.to_reveal.pop()
+    else:
+        state.revealing_square = None
 
     
     # check for win 2 ways: if set(mines) matches set(flags)
@@ -306,8 +306,8 @@ def render(state):
         elif square == state.selection: # mouse pressed down but not released
             draw_rectangle(state.selection.x, state.selection.y, 30, 30, LIGHTGRAY)
         # ANIMATION OPTION
-        # elif square == state.revealing_square:
-            # draw_rectangle(square.x, square.y, 30, 30, WHITE)
+        elif square == state.revealing_square:
+            draw_rectangle(square.x, square.y, 30, 30, WHITE)
         elif square.visible == True:
             draw_rectangle(square.x, square.y, 30, 30, GREEN) # fill safe squares with green
             if square.adj == 1: # squares with 1; diff offset due to font size
